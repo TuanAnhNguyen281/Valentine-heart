@@ -7,26 +7,26 @@ function UI() {
   const setMode = useStore(state => state.setMode)
 
   return (
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 flex flex-col justify-between p-8">
-        <header className="text-center">
-            <h1 className="text-4xl md:text-6xl font-serif text-rose-100 tracking-widest drop-shadow-[0_0_15px_rgba(183,110,121,0.8)]">
-              HAPPY VALENTINE
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 flex flex-col justify-between p-4 md:p-8">
+        <header className="text-center mt-4 md:mt-0">
+            <h1 className="text-3xl md:text-6xl font-serif text-rose-100 tracking-widest drop-shadow-[0_0_15px_rgba(183,110,121,0.8)]">
+              TRÁI TIM VALENTINE
             </h1>
-            <p className="text-rose-200/80 mt-2 font-light tracking-wider text-sm md:text-base">
+            <p className="text-rose-200/80 mt-2 font-light tracking-wider text-xs md:text-base px-2">
               HƯỚNG DẪN: Xòe tay (Hỗn loạn) • Nắm tay (Tình yêu) • Victory (Xem chi tiết) • Lắc tay (Xoay & Đổi ảnh)
             </p>
         </header>
         
-        <div className="pointer-events-auto flex gap-6 justify-center items-end pb-10">
+        <div className="pointer-events-auto flex flex-col md:flex-row gap-3 md:gap-6 justify-center items-center md:items-end pb-8 md:pb-10 w-full">
             <button 
               onClick={() => setMode('CHAOS')}
-              className="px-8 py-3 border border-rose-gold/50 text-rose-gold rounded-full hover:bg-rose-gold/10 transition-all tracking-widest text-sm backdrop-blur-sm"
+              className="w-48 md:w-auto px-6 py-3 border border-rose-gold/50 text-rose-gold rounded-full hover:bg-rose-gold/10 transition-all tracking-widest text-xs md:text-sm backdrop-blur-sm active:scale-95"
             >
               HỖN LOẠN
             </button>
             <button 
               onClick={() => setMode('FORMED')}
-              className="px-8 py-3 bg-rose-gold/20 border border-rose-gold text-rose-100 rounded-full hover:bg-rose-gold/40 transition-all tracking-widest text-sm backdrop-blur-sm shadow-[0_0_20px_rgba(183,110,121,0.3)]"
+              className="w-48 md:w-auto px-6 py-3 bg-rose-gold/20 border border-rose-gold text-rose-100 rounded-full hover:bg-rose-gold/40 transition-all tracking-widest text-xs md:text-sm backdrop-blur-sm shadow-[0_0_20px_rgba(183,110,121,0.3)] active:scale-95"
             >
               TÌNH YÊU
             </button>

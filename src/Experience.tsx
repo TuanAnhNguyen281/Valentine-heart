@@ -15,15 +15,25 @@ function CameraController() {
   const isHandDetected = useStore(state => state.isHandDetected)
 
   useFrame(() => {
+    // Responsive Camera Setup
+    const isMobile = window.innerWidth < 768
+    const baseZ = isMobile ? 28 : 18 // Zoom out more on mobile
+    
     if (isHandDetected) {
       // Subtle camera movement based on hand interaction
-      // Mapping expected hand coordinates to camera rotations or position
       const targetX = (handPosition.x - 0.5) * 5
       const targetY = (handPosition.y - 0.5) * 5
       
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.05)
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.05)
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseZ, 0.05) // Smooth transition to baseZ
       camera.lookAt(0, 0, 0)
+    } else {
+       // Return to center even if no hand
+       camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, 0.05)
+       camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.05)
+       camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseZ, 0.05)
+       camera.lookAt(0, 0, 0)
     }
   })
   return null
