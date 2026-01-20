@@ -29,32 +29,45 @@ export function Polaroids() {
   
   useFrame((state, delta) => {
     if (!groupRef.current) return
+    const group = groupRef.current
+    
     const time = state.clock.getElapsedTime()
     const isShaking = useStore.getState().isShaking
     
     // Auto Rotation in Formed Mode (sync with Ornaments)
     if (mode === 'FORMED' && !isShaking && focusedIndex === null) {
-         groupRef.current.rotation.y += delta * 0.5
+         group.rotation.y += delta * 0.5
     } else {
         // Reset or free spin? Let's just stop spinning when focused or chaos
         if (mode === 'CHAOS') {
-             groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, 0, 0.05)
+             group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, 0, 0.05)
         }
     }
     
-    groupRef.current.children.forEach((child, i) => {
+    group.children.forEach((child, i) => {
        const photo = photos[i]
        
        if (focusedIndex === i) {
-           // DETAIL VIEW: Zoom to camera front
-           const targetPos = state.camera.position.clone()
-           targetPos.z -= 5 // In front of camera
-           targetPos.y -= 1
-           
-           child.position.lerp(targetPos, 0.1)
-           child.lookAt(state.camera.position)
-           child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, 2, 0.1))
-           return
+            // DETAIL VIEW: Position strictly in front of camera (5 units away)
+            const dir = state.camera.getWorldDirection(new THREE.Vector3())
+            const targetPos = state.camera.position.clone().add(dir.multiplyScalar(5))
+            
+            // Convert World Target to Local Target (compensating for Group Rotation)
+            const localTarget = group.worldToLocal(targetPos.clone())
+            child.position.lerp(localTarget, 0.1)
+            
+            // Orientation: We want Child World Quaternion == Camera World Quaternion
+            // ChildLocal * ParentWorld = ChildWorld
+            // ChildLocal = ChildWorld * ParentWorld^-1
+            // ChildLocal = CameraWorld * ParentWorld^-1
+            const targetQuat = state.camera.quaternion.clone()
+            const parentInverse = group.quaternion.clone().invert()
+            targetQuat.multiply(parentInverse)
+            
+            child.quaternion.slerp(targetQuat, 0.1)
+            
+            child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, 2, 0.1))
+            return
        } else {
            child.scale.setScalar(THREE.MathUtils.lerp(child.scale.x, 1, 0.1))
        }
