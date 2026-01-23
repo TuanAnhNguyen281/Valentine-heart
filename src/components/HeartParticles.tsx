@@ -70,15 +70,21 @@ export function HeartParticles() {
     const target = mode === 'FORMED' ? 1 : 0
     progress.current = THREE.MathUtils.lerp(progress.current, target, 0.02)
     
+    // Get audio level directly from store (transient)
+    const audioLevel = useStore.getState().audioLevel
+    
     // Update uniforms
     shaderRef.current.uniforms.uTime.value = state.clock.elapsedTime
     shaderRef.current.uniforms.uProgress.value = progress.current
+    // Smooth beat or just raw? Raw is fine for reaction
+    shaderRef.current.uniforms.uBeat.value = THREE.MathUtils.lerp(shaderRef.current.uniforms.uBeat.value, audioLevel, 0.1)
   })
 
   // Uniforms
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
+    uBeat: { value: 0 },
   }), [])
 
   return (

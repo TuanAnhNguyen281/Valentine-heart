@@ -119,19 +119,29 @@ export function HandTracker() {
           setMode('FORMED')
           setIsShaking(false)
           setFocusedPolaroidIndex(null)
+          useStore.getState().setSpecialGesture(null)
           
+        } else if (categoryName === "ILoveYou") {
+            setMode('FORMED') // Keep formed
+            useStore.getState().setSpecialGesture('ILoveYou')
+            setIsShaking(false)
+
+        } else if (categoryName === "Thumb_Up") {
+            // Keep current mode but trigger effect
+            useStore.getState().setSpecialGesture('Thumb_Up')
+            setIsShaking(false)
+            
         } else if ((categoryName === "Victory" || categoryName === "Pointing_Up") && score > 0.5) {
            // DETAIL VIEW
            // Always pick a new random one when gesture is detected
-           // Add a small debounce or check if we just did it to avoid flickering 
-           // But user asked for "random 1", so let's allow re-roll.
-           // We'll use a simple random selection.
-           if (!focusedPolaroidIndex || Math.random() > 0.9) { // Simple debounce by chance or state
+           useStore.getState().setSpecialGesture(null)
+           if (!focusedPolaroidIndex || Math.random() > 0.9) { 
                 setFocusedPolaroidIndex(Math.floor(Math.random() * 20)) 
            }
            setIsShaking(false)
         } else {
             setIsShaking(false)
+            useStore.getState().setSpecialGesture(null)
         }
         
         // Map position (Palm center)

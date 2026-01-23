@@ -1,6 +1,7 @@
 export const vertexShader = `
   uniform float uTime;
   uniform float uProgress; // 0.0 = CHAOS, 1.0 = FORMED
+  uniform float uBeat; // Audio Reactivity
   
   attribute vec3 aRandomPosition;
   attribute vec3 aHeartPosition;
@@ -29,31 +30,39 @@ export const vertexShader = `
     );
 
     // Heart state: tighter, organized
-    // Add a gentle 'beat' or 'breathing' effect
     vec3 heartPos = aHeartPosition;
-    float beat = sin(uTime * 2.0) * 0.05 + 1.0; 
-    heartPos *= beat;
+    
+    // Audio Reactivity: Expansion
+    float heatExpansion = 1.0 + uBeat * 0.3; // Expand heart by up to 30%
+    heartPos *= heatExpansion;
 
     // Smooth transition
     vec3 pos = mix(chaosPos, heartPos, uProgress);
+
+    // Additional audio pulse on individual particle displacement (Explosion effect on beat)
+    if (uProgress > 0.8) {
+       pos += normalize(pos) * uBeat * aSpeed * 2.0;
+    }
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
     // Size attenuation
-    gl_PointSize = aSize * (300.0 / -mvPosition.z);
+    // Audio Reactivity: Size
+    float sizePulse = 1.0 + uBeat * 2.0;
+    gl_PointSize = aSize * (300.0 / -mvPosition.z) * sizePulse;
 
     // Color variation
-    // Deep Ruby Red (0.6, 0.07, 0.12) to Rose Gold (0.72, 0.43, 0.47)
+    // Deep Ruby Red to Rose Gold
     vec3 ruby = vec3(0.6, 0.07, 0.12);
-    vec3 roseGold = vec3(1.0, 0.6, 0.7); // Brightened for bloom
+    vec3 roseGold = vec3(1.0, 0.6, 0.7); 
     
     // Mix based on position to give depth
     float mixFactor = (pos.y + 5.0) / 10.0;
     vColor = mix(ruby, roseGold, mixFactor * 0.5 + 0.2);
     
-    // Brighten up when forming connection
-    vColor += vec3(0.1) * uProgress; 
+    // Brighten on beat
+    vColor += vec3(0.1) * uProgress + vec3(uBeat * 0.5); 
   }
 `
 

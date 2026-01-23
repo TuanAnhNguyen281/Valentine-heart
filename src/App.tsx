@@ -1,6 +1,8 @@
+
 import { Suspense } from 'react'
 import { Experience } from './Experience'
 import { HandTracker } from './components/HandTracker'
+import { MusicControls } from './components/MusicControls'
 import { useStore } from './store'
 
 function UI() {
@@ -51,6 +53,7 @@ function App() {
         <HandTracker />
       </Suspense>
       <UI />
+      <MusicControls />
     </div>
   )
 }

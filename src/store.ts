@@ -7,12 +7,16 @@ type AppState = {
   isHandDetected: boolean
   isShaking: boolean
   focusedPolaroidIndex: number | null
-  
+  audioLevel: number
+  specialGesture: string | null
+
   setMode: (mode: 'CHAOS' | 'FORMED') => void
   setHandPosition: (pos: THREE.Vector3) => void
   setHandDetected: (detected: boolean) => void
   setIsShaking: (shaking: boolean) => void
   setFocusedPolaroidIndex: (index: number | null) => void
+  setAudioLevel: (level: number) => void
+  setSpecialGesture: (gesture: string | null) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -21,10 +25,14 @@ export const useStore = create<AppState>((set) => ({
   isHandDetected: false,
   isShaking: false,
   focusedPolaroidIndex: null,
+  audioLevel: 0,
+  specialGesture: null,
 
   setMode: (mode) => set({ mode }),
   setHandPosition: (pos) => set({ handPosition: pos }),
   setHandDetected: (detected) => set({ isHandDetected: detected }),
   setIsShaking: (shaking) => set({ isShaking: shaking }),
   setFocusedPolaroidIndex: (index) => set({ focusedPolaroidIndex: index }),
+  setAudioLevel: (level) => set({ audioLevel: level }),
+  setSpecialGesture: (gesture) => set({ specialGesture: gesture }),
 }))

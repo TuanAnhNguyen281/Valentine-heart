@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, Sparkles, Text, Trail } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { HeartParticles } from './components/HeartParticles'
+import { GestureDecorations } from './components/GestureDecorations'
 import { Ornaments } from './components/Ornaments'
 import { Polaroids } from './components/Polaroids'
 import { useStore } from './store'
@@ -69,6 +70,7 @@ export function Experience() {
         <ValentineText />
       </Suspense>
       <MagicTrail />
+      <GestureDecorations />
       
       <EffectComposer>
         <Bloom 
@@ -84,15 +86,20 @@ export function Experience() {
 
 function ValentineText() {
     const mode = useStore(state => state.mode)
+    const specialGesture = useStore(state => state.specialGesture)
+    
     // Using a standard WOFF v1 font (Roboto) which has better compatibility than WOFF2 in some 3D parsers
     const fontUrl = 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff'
+
+    const text = specialGesture === 'ILoveYou' ? "I LOVE YOU !!!" : "Happy Valentine"
+    const color = specialGesture === 'Thumb_Up' ? "#ffd700" : "#ffebec"
 
     return (
         <group visible={mode === 'FORMED'}>
             <Text
                 position={[0, 0, 0]}
                 fontSize={1.5}
-                color="#ffebec"
+                color={color}
                 font={fontUrl}
                 anchorX="center"
                 anchorY="middle"
@@ -101,7 +108,7 @@ function ValentineText() {
                 outlineWidth={0.02}
                 outlineColor="#b76e79"
             >
-                Happy Valentine
+                {text}
                 <meshStandardMaterial emissive="#ff0000" emissiveIntensity={0.5} toneMapped={false} />
             </Text>
         </group>
