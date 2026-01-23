@@ -5,6 +5,7 @@ import * as THREE from 'three'
 
 export function HandTracker() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const setMode = useStore(state => state.setMode)
   const setHandPosition = useStore(state => state.setHandPosition)
   const setHandDetected = useStore(state => state.setHandDetected)
@@ -14,6 +15,7 @@ export function HandTracker() {
   const [loaded, setLoaded] = useState(false)
   
   const historyRef = useRef<number[]>([])
+  const lastVideoTime = useRef(0)
   
   // Navigation debounce
   const lastNavTime = useRef(0)
@@ -56,7 +58,62 @@ export function HandTracker() {
       if (!running || !videoRef.current || !gestureRecognizer) return
 
       let nowInMs = Date.now()
+      
+      // Throttle: limit detection to ~30fps
+      if (nowInMs - lastVideoTime.current < 33) {
+          animationFrameId = requestAnimationFrame(predictWebcam)
+          return
+      }
+      lastVideoTime.current = nowInMs
+
       const results = gestureRecognizer.recognizeForVideo(videoRef.current, nowInMs)
+      
+      // Draw Skeleton
+      const canvas = canvasRef.current
+      const video = videoRef.current
+        
+      if (canvas && video) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+              canvas.width = video.videoWidth
+              canvas.height = video.videoHeight
+              ctx.clearRect(0, 0, canvas.width, canvas.height)
+              
+              if (results.landmarks && results.landmarks.length > 0) {
+                  const landmarks = results.landmarks[0]
+                  
+                  // Draw Connections
+                  const connections = [
+                      [0,1], [1,2], [2,3], [3,4], // Thumb
+                      [0,5], [5,6], [6,7], [7,8], // Index
+                      [5,9], [9,10], [10,11], [11,12], // Middle
+                      [9,13], [13,14], [14,15], [15,16], // Ring
+                      [13,17], [17,18], [18,19], [19,20], // Pinky
+                      [0,17] // Palm Base
+                  ]
+                  
+                  ctx.lineWidth = 3
+                  ctx.strokeStyle = '#e11d48' // Rose Red
+                  
+                  connections.forEach(([start, end]) => {
+                       const p1 = landmarks[start]
+                       const p2 = landmarks[end]
+                       ctx.beginPath()
+                       ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height)
+                       ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height)
+                       ctx.stroke()
+                  })
+                  
+                  // Draw Points
+                  ctx.fillStyle = '#fb7185' // Rose Light
+                  landmarks.forEach(p => {
+                      ctx.beginPath()
+                      ctx.arc(p.x * canvas.width, p.y * canvas.height, 4, 0, 2 * Math.PI)
+                      ctx.fill()
+                  })
+              }
+          }
+      }
 
       if (results.gestures.length > 0) {
         setHandDetected(true)
@@ -119,29 +176,16 @@ export function HandTracker() {
           setMode('FORMED')
           setIsShaking(false)
           setFocusedPolaroidIndex(null)
-          useStore.getState().setSpecialGesture(null)
           
-        } else if (categoryName === "ILoveYou") {
-            setMode('FORMED') // Keep formed
-            useStore.getState().setSpecialGesture('ILoveYou')
-            setIsShaking(false)
-
-        } else if (categoryName === "Thumb_Up") {
-            // Keep current mode but trigger effect
-            useStore.getState().setSpecialGesture('Thumb_Up')
-            setIsShaking(false)
-            
         } else if ((categoryName === "Victory" || categoryName === "Pointing_Up") && score > 0.5) {
            // DETAIL VIEW
            // Always pick a new random one when gesture is detected
-           useStore.getState().setSpecialGesture(null)
            if (!focusedPolaroidIndex || Math.random() > 0.9) { 
                 setFocusedPolaroidIndex(Math.floor(Math.random() * 20)) 
            }
            setIsShaking(false)
         } else {
             setIsShaking(false)
-            useStore.getState().setSpecialGesture(null)
         }
         
         // Map position (Palm center)
@@ -173,14 +217,21 @@ export function HandTracker() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 opacity-50 hover:opacity-100 transition-opacity">
-        {/* Video feed for user feedback */}
-        <video 
-            ref={videoRef} 
-            className="w-32 h-24 rounded-lg border border-rose-gold/50 object-cover transform scale-x-[-1]" 
-            autoPlay 
-            playsInline 
-            muted 
-        />
+        <div className="relative w-48 h-36 border border-rose-gold/50 rounded-lg overflow-hidden bg-black/50">
+             {/* Video feed for user feedback */}
+             <video 
+                 ref={videoRef} 
+                 className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1] opacity-50" 
+                 autoPlay 
+                 playsInline 
+                 muted 
+             />
+             {/* Canvas for Skeleton */}
+             <canvas 
+                 ref={canvasRef}
+                 className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]"
+             />
+        </div>
         {!loaded && <div className="text-xs text-rose-gold text-center mt-1">Đang khởi động Camera...</div>}
     </div>
   )

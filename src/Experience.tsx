@@ -12,30 +12,20 @@ import * as THREE from 'three'
 
 function CameraController() {
   const { camera } = useThree()
-  const handPosition = useStore(state => state.handPosition)
-  const isHandDetected = useStore(state => state.isHandDetected)
-
-  useFrame(() => {
+  useFrame((state) => {
     // Responsive Camera Setup
     const isMobile = window.innerWidth < 768
-    const baseZ = isMobile ? 28 : 18 // Zoom out more on mobile
+    const baseZ = isMobile ? 28 : 18 
     
-    if (isHandDetected) {
-      // Subtle camera movement based on hand interaction
-      const targetX = (handPosition.x - 0.5) * 5
-      const targetY = (handPosition.y - 0.5) * 5
-      
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.05)
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.05)
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseZ, 0.05) // Smooth transition to baseZ
-      camera.lookAt(0, 0, 0)
-    } else {
-       // Return to center even if no hand
-       camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, 0.05)
-       camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.05)
-       camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseZ, 0.05)
-       camera.lookAt(0, 0, 0)
-    }
+    // Auto idle movement
+    const t = state.clock.getElapsedTime() * 0.2
+    const targetX = Math.sin(t) * 2
+    const targetY = Math.cos(t * 1.5) * 2
+    
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.02)
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.02)
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseZ, 0.05)
+    camera.lookAt(0, 0, 0)
   })
   return null
 }
@@ -45,7 +35,7 @@ export function Experience() {
     <Canvas
       camera={{ position: [0, 0, 18], fov: 45 }}
       gl={{ antialias: false, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.5 }}
-      dpr={[1, 2]} // Optimize performance
+      dpr={[1, 1.5]} // Reduce max DPR for performance
     >
       <color attach="background" args={['#050001']} />
       
@@ -86,20 +76,16 @@ export function Experience() {
 
 function ValentineText() {
     const mode = useStore(state => state.mode)
-    const specialGesture = useStore(state => state.specialGesture)
     
     // Using a standard WOFF v1 font (Roboto) which has better compatibility than WOFF2 in some 3D parsers
     const fontUrl = 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff'
-
-    const text = specialGesture === 'ILoveYou' ? "I LOVE YOU !!!" : "Happy Valentine"
-    const color = specialGesture === 'Thumb_Up' ? "#ffd700" : "#ffebec"
 
     return (
         <group visible={mode === 'FORMED'}>
             <Text
                 position={[0, 0, 0]}
                 fontSize={1.5}
-                color={color}
+                color="#ffebec"
                 font={fontUrl}
                 anchorX="center"
                 anchorY="middle"
@@ -108,7 +94,7 @@ function ValentineText() {
                 outlineWidth={0.02}
                 outlineColor="#b76e79"
             >
-                {text}
+                Happy Valentine
                 <meshStandardMaterial emissive="#ff0000" emissiveIntensity={0.5} toneMapped={false} />
             </Text>
         </group>
@@ -116,9 +102,9 @@ function ValentineText() {
 }
 
 function MagicTrail() {
+    const targetRef = useRef<THREE.Mesh>(null)
     const handPosition = useStore(state => state.handPosition)
     const isHandDetected = useStore(state => state.isHandDetected)
-    const targetRef = useRef<THREE.Mesh>(null)
     
     useFrame((state) => {
         if (!targetRef.current) return
@@ -127,11 +113,15 @@ function MagicTrail() {
         
         if (isHandDetected) {
             // Map hand pos (0..1) to scene coords (-10..10 roughly)
-            tx = (handPosition.x - 0.5) * 15
-            ty = (1.0 - handPosition.y - 0.5) * 10 
+            // Hand coordinates: x (0..1 left to right), y (0..1 top to bottom)
+            // 3D world: x (~ -12 to 12), y (~ -8 to 8) depends on FOV and Z distance
+            tx = (handPosition.x - 0.5) * 20
+            ty = (1.0 - handPosition.y - 0.5) * 12 
              // Invert Y because screen Y is top-down, 3D Y is bottom-up
         } else {
-            // Idle animation for trail
+             // Fallback to mouse if no hand? Or idle?
+             // User asked for hand tracking instead of mouse.
+             // Let's keep a subtle idle if no hand.
             const t = state.clock.getElapsedTime()
             tx = Math.sin(t) * 5
             ty = Math.cos(t * 1.5) * 3

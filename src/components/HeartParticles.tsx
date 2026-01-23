@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { vertexShader, fragmentShader } from '../shaders'
 import { useStore } from '../store'
 
-const COUNT = 4000
+const COUNT = 4000 // Reduced for better performance
 const RADIUS = 15 // Spread of chaos
 
 // Heart Function (returns boolean if point x,y,z is inside heart)
@@ -14,7 +14,7 @@ function isInsideHeart(x: number, y: number, z: number) {
   y /= 1.5
   z /= 1.5
   
-  // (x^2 + 9/4y^2 + z^2 - 1)^3 - x^2z^3 - 9/80y^2z^3 < 0
+
   const a = x * x + (9/4) * y * y + z * z - 1
   return (a * a * a - x * x * z * z * z - (9/80) * y * y * z * z * z) < 0
 }
@@ -70,21 +70,15 @@ export function HeartParticles() {
     const target = mode === 'FORMED' ? 1 : 0
     progress.current = THREE.MathUtils.lerp(progress.current, target, 0.02)
     
-    // Get audio level directly from store (transient)
-    const audioLevel = useStore.getState().audioLevel
-    
     // Update uniforms
     shaderRef.current.uniforms.uTime.value = state.clock.elapsedTime
     shaderRef.current.uniforms.uProgress.value = progress.current
-    // Smooth beat or just raw? Raw is fine for reaction
-    shaderRef.current.uniforms.uBeat.value = THREE.MathUtils.lerp(shaderRef.current.uniforms.uBeat.value, audioLevel, 0.1)
   })
 
   // Uniforms
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
-    uBeat: { value: 0 },
   }), [])
 
   return (

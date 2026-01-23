@@ -1,38 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { Volume2, VolumeX, Disc } from 'lucide-react'
-import { useStore } from '../store'
 
 export function MusicControls() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [volume, setVolume] = useState(0.5)
-  
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-  const rafRef = useRef<number>(0)
-  
-  // Direct access to store setter to avoid re-renders in this component
-  const setAudioLevel = useStore(state => state.setAudioLevel)
 
   useEffect(() => {
     // Create audio instance
     const audio = new Audio('/music.mp3')
     audio.loop = true
     audio.volume = volume
-    // Important for audio context to work with local file/same domain
-    audio.crossOrigin = "anonymous" 
+    // HTML5 Audio is enough, no AudioContext needed
     audioRef.current = audio
 
     // Cleanup
     return () => {
       audio.pause()
       audioRef.current = null
-      if (audioContextRef.current) {
-        audioContextRef.current.close()
-      }
-      cancelAnimationFrame(rafRef.current)
     }
   }, [])
 
@@ -42,72 +28,16 @@ export function MusicControls() {
     }
   }, [volume])
 
-  const setupAudioContext = () => {
-    if (audioContextRef.current) return; // Already setup
-
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    const ctx = new AudioContext();
-    audioContextRef.current = ctx;
-
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256; // Smaller FFT size for performance, sufficient for beat
-    analyserRef.current = analyser;
-
-    if (audioRef.current) {
-        const source = ctx.createMediaElementSource(audioRef.current);
-        source.connect(analyser);
-        analyser.connect(ctx.destination);
-        sourceRef.current = source;
-    }
-  }
-
-  const updateAudioLevel = () => {
-    if (!analyserRef.current || !isPlaying) return
-
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
-    analyserRef.current.getByteFrequencyData(dataArray)
-
-    // Calculate average volume (simple beat detection)
-    let sum = 0;
-    // Low frequency range usually 0-10 roughly with fft 256
-    for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
-    }
-    const average = sum / dataArray.length;
-    
-    // Normalize to 0-1
-    const level = average / 128.0; 
-    
-    // Smooth/Dampen could be done here or in receiver 
-    // We send raw normalized level
-    setAudioLevel(level)
-
-    rafRef.current = requestAnimationFrame(updateAudioLevel)
-  }
-
   const togglePlay = async () => {
     if (!audioRef.current) return
 
     if (isPlaying) {
       audioRef.current.pause()
       setIsPlaying(false)
-      cancelAnimationFrame(rafRef.current)
-      setAudioLevel(0)
     } else {
       try {
-          if (!audioContextRef.current) {
-              setupAudioContext()
-          }
-           if (audioContextRef.current?.state === 'suspended') {
-              await audioContextRef.current.resume();
-          }
-
           await audioRef.current.play()
           setIsPlaying(true)
-          
-          // Start analysis loop
-          updateAudioLevel()
-
       } catch (e) {
           console.error("Audio playback failed:", e)
           alert("Vui lòng thêm file 'music.mp3' vào thư mục 'public' để phát nhạc!")
@@ -128,22 +58,15 @@ export function MusicControls() {
     const tryPlay = async () => {
         if (!audioRef.current) return
         try {
-             // Try playing immediately (might be blocked)
              await audioRef.current.play()
              setIsPlaying(true)
-             updateAudioLevel()
         } catch {
              console.log("Autoplay blocked. Waiting for interaction.")
-             // If blocked, add one-time listener to document
              const unlock = async () => {
                  if (audioRef.current && audioRef.current.paused) {
                     try {
-                        if (!audioContextRef.current) setupAudioContext()
-                        if (audioContextRef.current?.state === 'suspended') await audioContextRef.current.resume()
-                        
                         await audioRef.current.play()
                         setIsPlaying(true)
-                        updateAudioLevel()
                     } catch (e) { console.error(e) }
                  }
                  document.removeEventListener('click', unlock)
@@ -156,7 +79,6 @@ export function MusicControls() {
         }
     }
     
-    // Slight delay to allow DOM render? Not strictly needed but safe
     setTimeout(tryPlay, 1000)
   }, [])
 
@@ -172,21 +94,17 @@ export function MusicControls() {
              transition-transform duration-[4s] ease-linear
              ${isPlaying ? 'animate-spin-slow' : ''}
         `}>
-             {/* Disc grooves */}
              <div className="absolute inset-1 rounded-full border border-zinc-800/80"></div>
              <div className="absolute inset-2 rounded-full border border-zinc-800/80"></div>
              <div className="absolute inset-3 rounded-full border border-zinc-800/80"></div>
              
-             {/* Center Label */}
              <div className="w-6 h-6 rounded-full bg-rose-500/80 border border-rose-200 flex items-center justify-center z-10">
                  <div className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
              </div>
              
-             {/* Reflection highlight */}
              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"></div>
         </div>
         
-        {/* Play Status Indicator (visible on hover or when paused) */}
         {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full backdrop-blur-[1px] transition-opacity">
                 <Disc size={24} className="text-rose-200 animate-pulse" />
@@ -194,8 +112,7 @@ export function MusicControls() {
         )}
       </div>
 
-      {/* Volume Control Group (Slide out on hover of container? Or always visible?) */}
-      {/* Let's keep it visible but styled nicer */}
+      {/* Volume Control Group */}
       <div className={`
         flex items-center gap-2 bg-rose-950/40 backdrop-blur-md rounded-full px-3 py-1.5
         border border-rose-gold/20 transition-all duration-300

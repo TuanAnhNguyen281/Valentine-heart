@@ -15,7 +15,7 @@ function UI() {
               TRÁI TIM VALENTINE
             </h1>
             <p className="text-rose-200/80 mt-2 font-light tracking-wider text-xs md:text-base px-2">
-              HƯỚNG DẪN: Xòe tay (Hỗn loạn) • Nắm tay (Tình yêu) • Victory (Xem chi tiết) • Lắc tay (Xoay & Đổi ảnh)
+              HƯỚNG DẪN: Xòe tay (Hỗn loạn) • Nắm tay (Tình yêu) • hi (Xem chi tiết) • Lắc tay (Xoay & Đổi ảnh)
             </p>
         </header>
         

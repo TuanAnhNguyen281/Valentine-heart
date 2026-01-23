@@ -86,28 +86,17 @@ function ParticleBurst({ count = 20, color = "#ff0000", speed = 1, life = 1, sha
 
 export function GestureDecorations() {
     const mode = useStore(state => state.mode)
-    const specialGesture = useStore(state => state.specialGesture)
     
     return (
         <>
             {/* Love Mode Decorations: Floating Hearts from hand */}
-            {mode === 'FORMED' && specialGesture !== 'ILoveYou' && (
+            {mode === 'FORMED' && (
                 <ParticleBurst count={50} color="#ff0055" speed={5} shape="heart" />
             )}
             
             {/* Chaos Mode Decorations: Wild Sparkles */}
             {mode === 'CHAOS' && (
                 <ParticleBurst count={50} color="#ffd700" speed={8} shape="star" />
-            )}
-
-            {/* I Love You Gesture: Massive Explosion of Hearts */}
-            {specialGesture === 'ILoveYou' && (
-                <ParticleBurst count={200} color="#ff3366" speed={15} shape="heart" life={2.0} />
-            )}
-
-            {/* Thumb Up Gesture: Golden Rain */}
-            {specialGesture === 'Thumb_Up' && (
-                <ParticleBurst count={100} color="#ffdd00" speed={10} shape="circle" life={1.5} />
             )}
         </>
     )
